@@ -1,129 +1,188 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
+import time
+import pandas as pd
+import numpy as np
 
-# C extensions
-*.so
+CITY_DATA = { 'chicago': 'chicago.csv',
+              'new york city': 'new_york_city.csv',
+              'washington': 'washington.csv' }
 
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-pip-wheel-metadata/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+def get_filters():
+    """
+    Asks user to specify a city, month, and day to analyze.
 
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
+    Returns:
+        (str) city - name of the city to analyze
+        (str) month - name of the month to filter by, or "all" to apply no month filter
+        (str) day - name of the day of week to filter by, or "all" to apply no day filter
+    """
+    print('Hello! Let\'s explore some US bikeshare data!')
+    # get user input for city (chicago, new york city, washington). HINT: Use a while loop to handle invalid inputs
+    city = input("Which city do you want to explore, chicago,new york city or washington? ").lower()
+    while city not in CITY_DATA.keys():
+        city = input(" That's not a valid input, please enter either chicago, new york city or washington: ").lower()
+    
+    # get user input for month (all, january, february, ... , june)
+    valid = ['january', 'february', 'march', 'april', 'may', 'june','all']
+    month = input("Do you want filter by month? if not type all: ").lower()
+    while month not in valid:
+        month = input("That's not a valid month, please enter a month name from january to june only or all for no filter: ").lower()
+            
+    # get user input for day of week (all, monday, tuesday, ... sunday)
+    valid = ['saturday', 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday','friday','all']
+    day = input("Do you want filter by day? if not please type all: ").lower()
+    while day not in valid:
+        day = input("That's not correct, please type a valid weekday name or type all for no filter: ").lower()
+    print('-'*40)
+    return city, month, day
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
 
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
+def load_data(city, month, day):
+    """
+    Loads data for the specified city and filters by month and day if applicable.
 
-# Translations
-*.mo
-*.pot
+    Args:
+        (str) city - name of the city to analyze
+        (str) month - name of the month to filter by, or "all" to apply no month filter
+        (str) day - name of the day of week to filter by, or "all" to apply no day filter
+    Returns:
+        df - Pandas DataFrame containing city data filtered by month and day
+    """
+   # load data file into a dataframe
+    df = pd.read_csv(CITY_DATA[city])
 
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
+    # convert the Start Time column to datetime
+    df['Start Time'] = pd.to_datetime(df['Start Time'])
 
-# Flask stuff:
-instance/
-.webassets-cache
+    # extract month and day of week from Start Time to create new columns
+    df['month'] = df['Start Time'].dt.month
+    df['day_of_week'] = df['Start Time'].dt.weekday_name
 
-# Scrapy stuff:
-.scrapy
 
-# Sphinx documentation
-docs/_build/
+    # filter by month if applicable
+    if month != 'all':
+        # use the index of the months list to get the corresponding int
+        months = ['january', 'february', 'march', 'april', 'may', 'june']
+        month = months.index(month)+1
+    
+        # filter by month to create the new dataframe
+        df = df[df['month']==month]
 
-# PyBuilder
-target/
+    # filter by day of week if applicable
+    if day != 'all':
+        # filter by day of week to create the new dataframe
+        df = df[df['day_of_week']==day.title()]
 
-# Jupyter Notebook
-.ipynb_checkpoints
+    return df
 
-# IPython
-profile_default/
-ipython_config.py
 
-# pyenv
-.python-version
+def time_stats(df):
+    """Displays statistics on the most frequent times of travel."""
 
-# pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-#Pipfile.lock
+    print('\nCalculating The Most Frequent Times of Travel...\n')
+    start_time = time.time()
+    # display the most common month
+    months = ['january', 'february', 'march', 'april', 'may', 'june']
+    print("The most common month is: {}".format(months[df['month'].mode()[0]-1]))
+    
+    # display the most common day of week
+    print("The most common day is: {}".format(df['day_of_week'].mode()[0]))
 
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow
-__pypackages__/
+    # display the most common start hour
+    df['hour'] = df['Start Time'].dt.hour
+    print("The most common start hour is: {}".format(df['hour'].mode()[0]))
+    
+    print("\nThis took %s seconds." % (time.time() - start_time))
+    print('-'*40)
 
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
 
-# SageMath parsed files
-*.sage.py
+def station_stats(df):
+    """Displays statistics on the most popular stations and trip."""
 
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+    print('\nCalculating The Most Popular Stations and Trip...\n')
+    start_time = time.time()
 
-# Spyder project settings
-.spyderproject
-.spyproject
+    # display most commonly used start station
+    print("The most common start station is: {}".format(df['Start Station'].mode()[0]))
 
-# Rope project settings
-.ropeproject
+    # display most commonly used end station
+    print("The most common end station is: {}".format(df['End Station'].mode()[0]))
 
-# mkdocs documentation
-/site
+    # TO DO: display most frequent combination of start station and end station trip
+    df['Trip'] = df[['Start Station','End Station']].agg(' to '.join, axis=1)
+    print("The most common trip is: {}".format(df['Trip'].mode()[0]))
 
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
+    print("\nThis took %s seconds." % (time.time() - start_time))
+    print('-'*40)
 
-# Pyre type checker
-.pyre/
+
+def trip_duration_stats(df):
+    """Displays statistics on the total and average trip duration."""
+
+    print('\nCalculating Trip Duration...\n')
+    start_time = time.time()
+
+    # display total travel time in days
+    total_travel_time_in_days = round(df['Trip Duration'].sum()/60/60/24)
+    print("Total travel time in days is: {} days".format(total_travel_time_in_days))
+
+    # display mean travel time in seconds
+    print("Average travel time in seconds is: {} seconds".format(round(df['Trip Duration'].mean())))
+
+
+    print("\nThis took %s seconds." % (time.time() - start_time))
+    print('-'*40)
+
+
+def user_stats(df):
+    """Displays statistics on bikeshare users."""
+
+    print('\nCalculating User Stats...\n')
+    start_time = time.time()
+
+    # Display counts of user types
+    print("The number of each user type is:\n{}".format(df['User Type'].value_counts()))
+
+    # Display counts of gender
+    if 'Gender' in (df.columns):
+        print("The number of each gender is:\n{}".format(df['Gender'].value_counts()))
+    # Display earliest, most recent, and most common year of birth
+    if 'Birth Year' in (df.columns):
+        print("The earliest birth year is: {}".format(df['Birth Year'].min()))
+        print("The recent birth year is: {}".format(df['Birth Year'].max()))
+        print("The most common birth year is: {}".format(df['Birth Year'].mode()[0]))
+        
+    
+    print("\nThis took %s seconds." % (time.time() - start_time))
+    print('-'*40)
+
+
+def raw_data(df):
+    """ Displays 5 rows of raw data per user request."""
+    raw = input("\nwhould you like to see some raw data. Yes or No?\n").lower()
+    if raw == 'yes':
+        num_rows = 0
+        while True:
+            print( "here is some of the raw data\n{}".format(df.iloc[num_rows:num_rows+5]))
+            num_rows += 5 
+            repeat = input("\nwould you like to see 5 more rows of the raw data?\n").lower()
+            if repeat != 'yes':
+                break
+
+def main():
+    while True:
+        city, month, day = get_filters()
+        df = load_data(city, month, day)
+
+        time_stats(df)
+        station_stats(df)
+        trip_duration_stats(df)
+        user_stats(df)
+        raw_data(df)
+        
+        restart = input('\nWould you like to restart? Enter yes or no.\n')
+        if restart.lower() != 'yes':
+            break
+
+
+if __name__ == "__main__":
+	main()
